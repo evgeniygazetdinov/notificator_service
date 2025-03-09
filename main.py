@@ -1,15 +1,20 @@
-from typing import Union
-
 from fastapi import FastAPI
 
-app = FastAPI()
+
+from settings import settings, Base, engine
+
+app = FastAPI(title=settings.PROJECT_NAME)
+Base.metadata.create_all(bind=engine)
+
+from lib.routers.notification import router as notification_router
+from lib.routers.template import router as templates_router
+
+app.include_router(notification_router)
+app.include_router(templates_router)
 
 
-@app.get("/")
-def read_root():
+
+
+@app.get("/api/v1/notifications/history")
+def history():
     return {"Hello": "World"}
-
-
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
