@@ -31,7 +31,7 @@ def update_notification(
 ) -> Optional[Notification]:
     db_notification = get_notification(db, notification_id)
     if db_notification:
-        update_data = notification.dict(exclude_unset=True)
+        update_data = notification.model_dump(exclude_unset=True)
         for key, value in update_data.items():
             setattr(db_notification, key, value)
         db.commit()
