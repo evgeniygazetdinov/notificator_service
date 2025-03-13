@@ -152,7 +152,7 @@ alembic downgrade -1
 # 3. Apply the fixed migration
 alembic upgrade head
 ```
-
+````
 fast_video_backend/
 ├── lib/
 │   ├── crud/         # CRUD operations
@@ -164,3 +164,4 @@ fast_video_backend/
 ├── alembic.ini      # Alembic configuration
 ├── main.py          # FastAPI application
 └── settings.py      # Application settings
+```
