@@ -1,5 +1,10 @@
+import json
+
 import pika
 import os
+
+from sqlalchemy.orm import class_mapper
+
 import settings
 
 
@@ -48,4 +53,16 @@ class RabbitMQ:
         if self.connection and not self.connection.is_closed:
             self.connection.close()
 
- 
+def serialize_sqlalchemy(obj):
+    """Сериализация SQLAlchemy объекта в dict"""
+    if hasattr(obj, '__dict__'):
+        fields = {}
+        for field in [x.key for x in class_mapper(obj.__class__).iterate_properties]:
+            data = obj.__dict__.get(field)
+            try:
+                json.dumps(data)  # проверка что данные можно сериализовать
+                fields[field] = data
+            except TypeError:
+                fields[field] = str(data)  # для объектов которые нельзя напрямую сериализовать
+        return fields
+    return str(obj)

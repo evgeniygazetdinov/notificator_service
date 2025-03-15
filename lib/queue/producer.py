@@ -1,24 +1,30 @@
 import json
 import logging
-
 import pika
+from .base import RabbitMQ, serialize_sqlalchemy
 
-from lib.queue.base import RabbitMQ
+logger = logging.error
 
 
 class NotificationProducer(RabbitMQ):
-    """ отправляем сообщения в очередь"""
-
-    def send_notification(self, notification_type: str, notification_data: dict) -> None:
+    """ отправляем уведомления в очередь """
+    
+    def send_notification(self, notification_type: str, notification_data) -> None:
         """ уведомления в соответствующую очередь по типу"""
         queue_name = f'{notification_type}_notifications'
         try:
-            self.channel.basic_publish(exchange='',
-            routing_key=queue_name, body=json.dumps(notification_data),
-            properties=pika.BasicProperties(
-                delivery_mode=2,  # сохраним на диск локально
-            )
+            # Преобразуем SQLAlchemy модель в dict и затем в JSON
+            message_data = serialize_sqlalchemy(notification_data)
+            message_body = json.dumps(message_data)
+            
+            self.channel.basic_publish(
+                exchange='',
+                routing_key=queue_name,
+                body=message_body,
+                properties=pika.BasicProperties(
+                    delivery_mode=2,  # сохраним на диск локально
+                )
             )
         except Exception as e:
-            logging.error("Error sending notification: %s", e)
-            raise   
+            logger("Error sending notification: %s", e)
+            raise

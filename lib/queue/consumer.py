@@ -7,11 +7,15 @@ from lib.db import SessionLocal
 
 class NotificationConsumer(RabbitMQ):
     """Класс для получения и обработки уведомлений из очереди"""
-    
+    QUEUE_NAMES = {
+        'email': 'email_notifications',
+        'sms': 'sms_notifications'
+    }
+
     def __init__(self):
         super().__init__()
         self.db: Session = SessionLocal()
-    
+
     def process_notification(self, notification_type: str):
         """
         Начать обработку уведомлений определенного типа

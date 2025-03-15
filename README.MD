@@ -152,8 +152,7 @@ alembic downgrade -1
 # 3. Apply the fixed migration
 alembic upgrade head
 ```
-````
-fast_video_backend/
+```
 ├── lib/
 │   ├── crud/         # CRUD operations
 │   ├── routers/      # API routes
@@ -165,3 +164,8 @@ fast_video_backend/
 ├── main.py          # FastAPI application
 └── settings.py      # Application settings
 ```
+ ### issues:
+ - [x] fix notification endpoint, for send
+ - [x] up worker for handle producer notifications
+ - [ ] correct handle with consumer
+ - [ ] implement full logic send\handle\result

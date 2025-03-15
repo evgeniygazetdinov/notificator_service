@@ -1,10 +1,10 @@
 import logging
 
+from lib.queue.consumer import NotificationConsumer
 
 logger = logging.getLogger(__name__)
 from multiprocessing import Process
 
-from consumer import NotificationConsumer
 
 
 def process_email(notification_data):
@@ -28,7 +28,7 @@ def process_sms(notification_data):
 def run_worker(notification_type):
     """ роутер на смс или почту"""
     consumer = NotificationConsumer()
-    consumer.process_notification(notification_type, process_email if notification_type == 'email' else process_sms)
+    consumer.process_notification(notification_type) # process_email if notification_type == 'email' else process_sms)
 
 
 def run_workers():
