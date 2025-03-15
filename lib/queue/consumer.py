@@ -28,17 +28,20 @@ class NotificationConsumer(RabbitMQ):
             raise ValueError(f"Unsupported notification type: {notification_type}")
         
         def callback(ch, method, properties, body):
+            notification_id = None
             try:
                 notification_data = json.loads(body)
                 
                 # Обновляем статус в БД на "processing"
                 notification_id = notification_data.get('id')
+                print(f'that is nofication data {notification_data}')
                 if notification_id:
-                    notification_crud.update_notification_status(
+                    notification_crud.update_notification(
                         self.db, 
                         notification_id, 
                         "processing"
                     )
+                    print('update by processing status')
                 
                 # В зависимости от типа уведомления вызываем соответствующий обработчик
                 if notification_type == 'email':
@@ -48,11 +51,12 @@ class NotificationConsumer(RabbitMQ):
                 
                 # Обновляем статус на "sent"
                 if notification_id:
-                    notification_crud.update_notification_status(
+                    notification_crud.update_notification(
                         self.db, 
                         notification_id, 
                         "sent"
                     )
+                    print('update by processing status')
                 
                 # Подтверждаем обработку сообщения
                 ch.basic_ack(delivery_tag=method.delivery_tag)
@@ -60,11 +64,10 @@ class NotificationConsumer(RabbitMQ):
             except Exception as e:
                 # При ошибке обновляем статус и возвращаем сообщение в очередь
                 if notification_id:
-                    notification_crud.update_notification_status(
+                    notification_crud.update_notification(
                         self.db, 
                         notification_id, 
                         "failed",
-                        error=str(e)
                     )
                 ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
                 print(f"Error processing message: {e}")
