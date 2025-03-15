@@ -1,5 +1,71 @@
 ## Notificator service
 
+### Project Status and TODO List
+
+#### Current Status
+- [x] Basic project structure
+- [x] Database setup with PostgreSQL
+- [x] Basic CRUD operations for notifications
+- [x] Database migrations with Alembic
+
+#### TODO List
+
+##### Phase 1 - Basic Functionality
+- [ ] Email Notifications:
+  - [ ] HTML and text format support
+  - [ ] File attachments
+  - [ ] Different encodings support
+  - [ ] Integration with email providers (SendGrid/Amazon SES)
+
+- [ ] Templates System:
+  - [ ] Template CRUD operations
+  - [ ] Template versioning
+  - [ ] Variable substitution
+  - [ ] Template preview functionality
+
+- [ ] API Development:
+  - [ ] Complete notification endpoints
+  - [ ] Template management endpoints
+  - [ ] API documentation (Swagger/OpenAPI)
+
+##### Phase 2 - Extended Features
+- [ ] SMS Notifications:
+  - [ ] Unicode support
+  - [ ] Automatic message splitting
+  - [ ] Delivery status tracking
+  - [ ] SMS provider integration (Twilio/Nexmo)
+
+- [ ] Message Queue Integration:
+  - [ ] RabbitMQ/Kafka setup
+  - [ ] Separate queues for different notification types
+  - [ ] Dead Letter Queue for error handling
+
+- [ ] Caching:
+  - [ ] Redis integration
+  - [ ] Template caching
+  - [ ] Rate limiting implementation
+
+##### Phase 3 - Security & Reliability
+- [ ] Security Features:
+  - [ ] JWT authentication
+  - [ ] API key management
+  - [ ] RBAC implementation
+  - [ ] Data encryption (AES-256)
+  - [ ] TLS 1.3 support
+
+- [ ] Monitoring & Logging:
+  - [ ] Prometheus metrics
+  - [ ] Grafana dashboards
+  - [ ] ELK Stack integration
+  - [ ] Sensitive data masking in logs
+
+- [ ] Performance & Testing:
+  - [ ] Load testing (1000+ notifications/minute)
+  - [ ] API response time optimization (<200ms)
+  - [ ] Test coverage >80%
+  - [ ] Failover mechanisms
+
+### Installation and Setup
 
 - for install dependencies run:
 ```bash
@@ -86,8 +152,7 @@ alembic downgrade -1
 # 3. Apply the fixed migration
 alembic upgrade head
 ```
-
-fast_video_backend/
+```
 ├── lib/
 │   ├── crud/         # CRUD operations
 │   ├── routers/      # API routes
@@ -98,5 +163,9 @@ fast_video_backend/
 ├── alembic.ini      # Alembic configuration
 ├── main.py          # FastAPI application
 └── settings.py      # Application settings
-
 ```
+ ### issues:
+ - [x] fix notification endpoint, for send
+ - [x] up worker for handle producer notifications
+ - [ ] correct handle with consumer
+ - [ ] implement full logic send\handle\result
