@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  rabbitmq-test:
+    image: rabbitmq:3-management
+    environment:
+      - RABBITMQ_DEFAULT_USER=user
+      - RABBITMQ_DEFAULT_PASS=passwordmq
+    ports:
+      - "15673:5672"
+      - "15674:15672"
+    networks:
+      - test-network
+
+  worker:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      target: worker
+    environment:
+      - PYTHONPATH=/app
+      - RABBITMQ_HOST=rabbitmq-test
+      - RABBITMQ_USER=user
+      - RABBITMQ_PASSWORD=passwordmq
+    depends_on:
+      - rabbitmq-test
+    networks:
+      - test-network
+
+  tests:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      target: base
+    command: python -m pytest -v tests/
+    environment:
+      - PYTHONPATH=/app
+      - RABBITMQ_HOST=rabbitmq-test
+      - RABBITMQ_USER=user
+      - RABBITMQ_PASSWORD=passwordmq
+    depends_on:
+      - rabbitmq-test
+    networks:
+      - test-network
+
+networks:
+  test-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.29.0.0/16

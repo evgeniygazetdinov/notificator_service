@@ -3,6 +3,7 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from lib.models import NotificationDB as Notification
+from lib.queue.base import serialize_sqlalchemy
 from lib.schemas import NotificationCreate, NotificationUpdate
 
 def create_notification(db: Session, notification: NotificationCreate) -> Notification:
@@ -31,7 +32,7 @@ def update_notification(
 ) -> Optional[Notification]:
     db_notification = get_notification(db, notification_id)
     if db_notification:
-        update_data = notification.model_dump(exclude_unset=True)
+        update_data = dict(notification)
         for key, value in update_data.items():
             setattr(db_notification, key, value)
         db.commit()

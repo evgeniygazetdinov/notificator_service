@@ -18,6 +18,7 @@ class NotificationUpdate(NotificationBase):
     recipient: Optional[str] = None
     content: Optional[str] = None
     variables: Optional[Dict] = None
+    status: Optional[str] = None
 
 class NotificationInDB(NotificationBase):
     id: UUID

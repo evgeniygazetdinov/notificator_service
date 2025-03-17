@@ -33,33 +33,8 @@ def delete_notification(notification_id: UUID, db: Session = Depends(get_db)):
 def update_notification(notification_id: UUID, notification: NotificationUpdate, db: Session = Depends(get_db)):
     return notification_crud.update_notification(db, notification_id, notification)
 @router.get("/list")
-def get_notification_by_offset(offset: int, limit: int, db: Session = Depends(get_db)):
+def get_notification_by_offset(offset: int=0, limit: int=10, db: Session = Depends(get_db)):
     return notification_crud.get_notifications(db, offset, limit)
-
-    """отправка с хендлером обработки уведомления"""
-    notification_data = notification_crud.create_notification(db, notification)
-    producer = NotificationProducer()
-    # try:
-    producer.send_notification(notification_data.type, notification_data)
-    return {"status": "queued", "notification_id": notification_data.id}
-    # except Exception as e:
-        # notification_crud.update_notification(db, notification_data.id, {"status": "failed"})
-    #     raise HTTPException(status_code=500, detail=str(e))
-    # finally:
-    #     producer.close()
-
-
-
-@router.post("/delete")
-def delete_notification(notification_id: UUID, db: Session = Depends(get_db)):
-    return notification_crud.delete_notification(db, notification_id)
-@router.put("/update")
-def update_notification(notification_id: UUID, notification: NotificationUpdate, db: Session = Depends(get_db)):
-    return notification_crud.update_notification(db, notification_id, notification)
-@router.get("/list")
-def get_notification_by_offset(offset: int, limit: int, db: Session = Depends(get_db)):
-    return notification_crud.get_notifications(db, offset, limit)
-
 
 
 @router.get("/{id}/status/")

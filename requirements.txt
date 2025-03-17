@@ -43,3 +43,6 @@ sqlalchemy>=2.0.23
 starlette==0.46.1
 typer==0.15.2
 typing_extensions==4.12.2
+pytest==8.0.0
+pytest-asyncio==0.23.5
+pytest-cov==4.1.0

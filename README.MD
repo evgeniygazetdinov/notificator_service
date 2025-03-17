@@ -167,5 +167,5 @@ alembic upgrade head
  ### issues:
  - [x] fix notification endpoint, for send
  - [x] up worker for handle producer notifications
- - [ ] correct handle with consumer
+ - [x] correct handle with consumer need to fix update_notification function
  - [ ] implement full logic send\handle\result
