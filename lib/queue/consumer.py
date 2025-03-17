@@ -1,9 +1,16 @@
 import json
-from typing import Callable, Dict, Any
+import logging
+import time
+from typing import Callable, Dict, Any, Optional
+
+import pika
+
 from .base import RabbitMQ
 from sqlalchemy.orm import Session
 from lib.crud import notification as notification_crud
 from lib.db import SessionLocal
+
+logger = logging.getLogger(__name__)
 
 class NotificationConsumer(RabbitMQ):
     """Класс для получения и обработки уведомлений из очереди"""
@@ -12,9 +19,11 @@ class NotificationConsumer(RabbitMQ):
         'sms': 'sms_notifications'
     }
 
-    def __init__(self):
+    def __init__(self, max_retries: int = 3, retry_delay: int = 5):
         super().__init__()
         self.db: Session = SessionLocal()
+        self.max_retries = max_retries
+        self.retry_delay = retry_delay
 
     def process_notification(self, notification_type: str):
         """
@@ -29,19 +38,45 @@ class NotificationConsumer(RabbitMQ):
         
         def callback(ch, method, properties, body):
             notification_id = None
+            retry_count = properties.headers.get('x-retry-count', 0) if properties.headers else 0
+
             try:
                 notification_data = json.loads(body)
-                
-                # Обновляем статус в БД на "processing"
                 notification_id = notification_data.get('id')
-                print(f'that is nofication data {notification_data}')
-                if notification_id:
-                    notification_crud.update_notification(
-                        self.db, 
-                        notification_id, 
-                        "processing"
-                    )
-                    print('update by processing status')
+                
+                if not notification_id:
+                    logger.error("No notification ID in message")
+                    ch.basic_ack(delivery_tag=method.delivery_tag)
+                    return
+
+                # Проверяем существование уведомления
+                notification = notification_crud.get_notification(self.db, notification_id)
+                if not notification:
+                    logger.error(f"Notification {notification_id} not found in database")
+                    # Если превышено количество попыток, отбрасываем сообщение
+                    if retry_count >= self.max_retries:
+                        logger.error(f"Max retries ({self.max_retries}) reached for notification {notification_id}")
+                        ch.basic_ack(delivery_tag=method.delivery_tag)
+                    else:
+                        # Возвращаем в очередь с увеличенным счетчиком попыток
+                        time.sleep(self.retry_delay)  # Ждем перед повторной попыткой
+                        ch.basic_publish(
+                            exchange='',
+                            routing_key=queue_name,
+                            body=body,
+                            properties=pika.BasicProperties(
+                                headers={'x-retry-count': retry_count + 1}
+                            )
+                        )
+                        ch.basic_ack(delivery_tag=method.delivery_tag)
+                    return
+
+                # Обновляем статус на processing
+                notification_crud.update_notification(
+                    self.db, 
+                    notification_id,
+                    {"status": "processing"}
+                )
                 
                 # В зависимости от типа уведомления вызываем соответствующий обработчик
                 if notification_type == 'email':
@@ -49,37 +84,35 @@ class NotificationConsumer(RabbitMQ):
                 elif notification_type == 'sms':
                     self._send_sms(notification_data)
                 
-                # Обновляем статус на "sent"
-                if notification_id:
-                    notification_crud.update_notification(
-                        self.db, 
-                        notification_id, 
-                        "sent"
-                    )
-                    print('update by processing status')
-                
-                # Подтверждаем обработку сообщения
+                # Обновляем статус на sent
+                notification_crud.update_notification(
+                    self.db, 
+                    notification_id,
+                    {"status": "sent"}
+                )
+                logger.info(f"Successfully processed notification {notification_id}")
                 ch.basic_ack(delivery_tag=method.delivery_tag)
                 
             except Exception as e:
-                # При ошибке обновляем статус и возвращаем сообщение в очередь
+                logger.error(f"Error processing notification {notification_id}: {str(e)}")
                 if notification_id:
                     notification_crud.update_notification(
                         self.db, 
-                        notification_id, 
-                        "failed",
+                        notification_id,
+                        {'status': "failed"}
                     )
+                # Добавляем задержку перед повторной попыткой
+                time.sleep(self.retry_delay)
                 ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
-                print(f"Error processing message: {e}")
-        
-        # Устанавливаем prefetch_count=1, чтобы распределять нагрузку между воркерами
+
+        # Устанавливаем prefetch_count в 1, чтобы получать сообщения по одному
         self.channel.basic_qos(prefetch_count=1)
         self.channel.basic_consume(
             queue=queue_name,
             on_message_callback=callback
         )
         
-        print(f"Started consuming {notification_type} notifications...")
+        logger.info(f"Started consuming from {queue_name}")
         try:
             self.channel.start_consuming()
         except KeyboardInterrupt:
