@@ -11,4 +11,3 @@ from lib.routers.template import router as templates_router
 
 app.include_router(notification_router)
 app.include_router(templates_router)
-

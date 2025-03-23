@@ -12,6 +12,7 @@
 
 ##### Phase 1 - Basic Functionality
 - [ ] Email Notifications:
+  - [ ] send real message with test data
   - [ ] HTML and text format support
   - [ ] File attachments
   - [ ] Different encodings support

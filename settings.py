@@ -9,11 +9,11 @@ class Settings(BaseSettings):
     # Основные настройки приложения
     API_V1_STR: str = "/api/v1"
     PROJECT_NAME: str = "Notification Service"
-    
+
     # Настройки безопасности
     SECRET_KEY: str = "your-secret-key-here"
     DEBUG: bool = True
-    
+
     # Настройки PostgreSQL
     POSTGRES_USER: str = "user"
     POSTGRES_PASSWORD: str = "password"
@@ -26,6 +26,14 @@ class Settings(BaseSettings):
     RABBITMQ_USER: str = "user"
     RABBITMQ_PASSWORD: str = "passwordmq"
 
+    MAIL_USERNAME: str = "notficatior"
+    MAIL_PASSWORD: str = "notificatorPassword"
+    MAIL_FROM: str = "notficatior@yandex.ru"
+    MAIL_PORT: int = 587
+    MAIL_SERVER: str = "smtp.gmail.com"
+    MAIL_TLS: bool = True
+    MAIL_SSL: bool = False
+
     @property
     def database_url(self) -> str:
         """Динамически создаем URL базы данных из компонентов"""
@@ -35,7 +43,7 @@ class Settings(BaseSettings):
         case_sensitive = True
         env_file = ".env"
         # Это позволит экспортировать переменные в os.environ
-        env_file_encoding = 'utf-8'
+        env_file_encoding = "utf-8"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -44,12 +52,15 @@ class Settings(BaseSettings):
             if isinstance(value, (str, int, float, bool)):
                 os.environ[key] = str(value)
 
+
 """
 Декоратор @lru_cache() из модуля functools 
 - это механизм кеширования результатов функции. 
 LRU расшифровывается как "Least Recently Used"
  (Наименее недавно использованный).
 """
+
+
 @lru_cache()
 def get_settings() -> Settings:
     """Создает синглтон объект настроек"""

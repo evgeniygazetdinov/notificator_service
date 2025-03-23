@@ -1,10 +1,9 @@
 import json
-
-import pika
 import os
+from typing import Dict, Any
 
 from sqlalchemy.orm import class_mapper
-
+import aio_pika
 import settings
 
 
@@ -23,39 +22,35 @@ class RabbitMQ:
         Обрабатывает их через callback-функцию
         Подтверждает успешную обработку (ack)
         Возвращает в очередь при ошибке (nack)
-    Преимущества такого подхода:
-        Надежность:
-            Сообщения сохраняются на диск (delivery_mode=2)
-            При ошибке возвращаются в очередь
-            Не теряются при перезапуске сервиса
-        Масштабируемость:
-            Можно запустить несколько воркеров
-            Балансировка нагрузки (prefetch_count=1)
-            Разные очереди для разных типов уведомлений
-        Отказоустойчивость:
-            Асинхронная обработка
-            Независимость от основного приложения
-            Автоматические повторные попытки
     """
-    def __init__(self):
-        self.user = os.getenv('RABBITMQ_USER', 'user')
-        self.password = os.getenv('RABBITMQ_PASSWORD', 'passwordmq')
-        self.host = os.getenv('RABBITMQ_HOST', 'localhost')
-        self.port = int(os.getenv('RABBITMQ_PORT', 5672))
-        self.credentials = pika.PlainCredentials(self.user, self.password)
-        self.parameters = pika.ConnectionParameters(host=self.host, port=self.port, credentials=self.credentials)
-        self.connection = pika.BlockingConnection(self.parameters)
-        self.channel = self.connection.channel()
-        self.channel.queue_declare(queue='email_notifications')
-        self.channel.queue_declare(queue='sms_notifications')
 
-    def close(self):
+    def __init__(self):
+        self.username = os.getenv("RABBITMQ_USER", "user")
+        self.password = os.getenv("RABBITMQ_PASSWORD", "passwordmq")
+        self.host = os.getenv("RABBITMQ_HOST", "localhost")
+        self.port = int(os.getenv("RABBITMQ_PORT", 5672))
+        self.connection = None
+        self.channel = None
+
+    async def connect(self):
+        """Установка асинхронного соединения с RabbitMQ"""
+        if not self.connection or self.connection.is_closed:
+            self.connection = await aio_pika.connect_robust(
+                f"amqp://{self.username}:{self.password}@{self.host}:{self.port}/"
+            )
+            self.channel = await self.connection.channel()
+
+    async def close(self):
+        """Закрытие соединения"""
         if self.connection and not self.connection.is_closed:
-            self.connection.close()
+            await self.connection.close()
+            self.connection = None
+            self.channel = None
+
 
 def serialize_sqlalchemy(obj):
     """Сериализация SQLAlchemy объекта в dict"""
-    if hasattr(obj, '__dict__'):
+    if hasattr(obj, "__dict__"):
         fields = {}
         for field in [x.key for x in class_mapper(obj.__class__).iterate_properties]:
             data = obj.__dict__.get(field)
